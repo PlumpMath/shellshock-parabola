@@ -7,6 +7,7 @@
 (defvar *loop* 0.0)
 (defvar *quad* nil)
 (defvar *quad-stream* nil)
+(defparameter *screen-factor* 338)
 (defparameter *running* nil)
 (defparameter *last-time* (get-internal-real-time))
 (defparameter *size* #(2000 2000))
@@ -49,16 +50,13 @@
 (def-g-> prog-1 ()
   #'vert #'frag)
 
+
 (defun step-demo ()
   (let ((now (get-internal-real-time)))
-    (if (< (- now *last-time*) (/ 1000 30))
-        (sleep (/ (- 1000/30 (- now *last-time*)) 1000)))
+    (if (< (- now *last-time*) 1000/60)
+        (sleep (/ (- 1000/60 (- now *last-time*)) 1000)))
     (setf *last-time* now))
-  (incf *loop* 0.01)
-  (step-host)
-  (clear)
-  (map-g #'prog-1 *quad-stream*)
-  (swap))
+  (step-host))
 
 (defun run-loop ()
   (setf *running* t)
@@ -74,7 +72,8 @@
   (setf *quad-stream* (make-buffer-stream *quad* :retain-arrays t))
   (skitter:whilst-listening-to
       ((#'window-size-callback (skitter:window 0) :size)
-       (#'mouse-callback (skitter:mouse 0) :button))
+       (#'mouse-callback (skitter:mouse 0) :button)
+       (#'mouse-callback (skitter:mouse 0) :pos))
     (loop :while (and *running* (not (shutting-down-p))) :do
       (continuable (step-demo)
         (livesupport:update-repl-link)))))
@@ -89,8 +88,9 @@
   (declare (ignore event timestamp))
   (when (skitter:mouse-down-p skitter.sdl2.mouse-buttons:mouse.left)
     (let ((mouse-y (y (skitter:xy-pos-vec (skitter:mouse-pos (skitter:mouse 0))))))
-      (setf *line-height* (- 1 (* 2 (/ mouse-y (y *size*)))))
-      (calc-values (x *size*) (y *size*)))))
+      (setf *line-height* (- 1 (* 2 (/ mouse-y (y *size*))))))
+    (update-interface)))
+
 
 ;;--------------------------------------------------------------
 ;; window
@@ -98,24 +98,22 @@
 (defun radians->degrees (r)
   (* 180 (/ r pi)))
 
-(defun calc-values (d h)
+(defun update-interface ()
   (let* ((factor 1.00056)
-         (d (* d (sqrt (/ (- 1 *line-height*) 2))))
-         (h (* h (- 1 (/ (+ *line-height* 1) 2))))
+         (d (* (x *size*) (sqrt (/ (- 1 *line-height*) 2))))
+         (h (* (y *size*) (- 1 (/ (+ *line-height* 1) 2))))
          (angle (atan (/ (* 4 h) d)))
          (short-distance (* 35 (sqrt (/ d
-                                        (sin (* 2 angle)) 338))))
-         )
+                                        (sin (* 2 angle)) *screen-factor*)))))
+    (print *size*)
     (print (round (* short-distance (expt factor short-distance))))
     (print (round (radians->degrees angle)))
-     ))
+    (clear)
+    (map-g #'prog-1 *quad-stream*)
+    (swap)))
 
 (defun window-size-callback (event timestamp)
   (declare (ignore timestamp))
-  (let* ((xy (skitter:size-2d-vec event))
-         (d (aref xy 0))
-         (h (aref xy 1)))
-    (print xy)
-    (calc-values d h)
-    (setf *size* xy)
-    (update-transform)))
+  (setf *size* (skitter:size-2d-vec event))
+  (update-transform)
+  (update-interface))

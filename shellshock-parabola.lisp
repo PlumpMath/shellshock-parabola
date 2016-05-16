@@ -102,6 +102,7 @@
                 :dimensions 6))
   (setf *quad-stream* (make-buffer-stream *quad* :retain-arrays t))
   (setf *last-time* (get-internal-real-time))
+  (gl:depth-func :lequal)
   (skitter:whilst-listening-to
       ((#'window-size-callback (skitter:window 0) :size)
        (#'mouse-callback (skitter:mouse 0) :button)

@@ -164,11 +164,11 @@
                (k (+ *line-height* (* 2 (/ height (y *size*)))))
                (a (/ (- *line-height* k)
                      (expt (- (/ red-x-dist (x *size*)) h) 2))))
-          (map-g #'prog-1-right *quad-stream* :color (v! 0.5 0.0 1.0) :transform (calc-transform *size*)
+          (map-g #'prog-1-right *quad-stream* :color (v! 0.0 0.0 1.0) :transform (calc-transform *size*)
                                               :a a
                                               :h (- h 1)
                                               :k k)
-          (map-g #'prog-1-left *quad-stream* :color (v! 0.0 0.5 1.0) :transform (calc-transform *size*)
+          (map-g #'prog-1-left *quad-stream* :color (v! 0.0 0.0 1.0) :transform (calc-transform *size*)
                                              :a a
                                              :h (- 1 h)
                                              :k k))
